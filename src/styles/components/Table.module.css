@@ -1,0 +1,92 @@
+/* Estilo para o container da tabela */
+.tableContainer {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    max-height: 60vh; /* Ajuste conforme necessário */
+    position: relative;
+}
+
+/* Barra de pesquisa */
+.searchBar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+/* Estilo para o input de pesquisa */
+.searchInput {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 250px;
+    font-size: 14px;
+    outline: none;
+}
+
+.searchInput:focus {
+    border-color: #999;
+}
+
+/* Estilo para a tabela */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th, .table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.table tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Estilo para os botões de edição e exclusão */
+.editButton, .deleteButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px;
+    transition: color 0.3s ease;
+}
+
+.editButton:hover {
+    color: blue;
+}
+
+.deleteButton:hover {
+    color: red;
+}
+
+/* Estilo para a barra de paginação */
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.pagination button {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 0 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.pagination button:hover {
+    background-color: #f1f1f1;
+}
+
+.pagination .activePage {
+    background-color: #ddd;
+    color: #333;
+}
