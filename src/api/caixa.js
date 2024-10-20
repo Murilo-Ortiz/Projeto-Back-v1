@@ -1,6 +1,6 @@
 import api from './api'; // Importe a instância do axios
 
-const API_BASE_URL = '/api/caixa'; // URL base para a API de caixa
+const API_BASE_URL = '/caixa'; // URL base para a API de caixa
 
 // Função para abrir o caixa
 export const openCaixa = async (userId) => {
@@ -22,6 +22,7 @@ export const closeCaixa = async (userId) => {
     try {
         const response = await api.put(`${API_BASE_URL}/${userId}`);
         if (response.status === 204) {
+            console.log('caixa fechado');
             return;
         } else {
             throw new Error('Failed to close caixa');
@@ -46,6 +47,22 @@ export const checkCaixaStatus = async (userId) => {
         throw error;
     }
 };
+// Função para obter um movimento específico pelo ID
+export const fetchMovimentoById = async (caixaId, movimentoId) => {
+    try {
+        const response = await api.get(`${API_BASE_URL}/${caixaId}/movimentos/${movimentoId}`);
+        if (response.status === 200) {
+            console.log(response);
+            return response.data; // Retorna os dados do movimento
+        } else {
+            throw new Error('Failed to fetch movimento');
+        }
+    } catch (error) {
+        console.error('Error fetching movimento:', error.response?.data || error.message);
+        throw error;
+    }
+};
+
 
 // Função para obter os movimentos pelo ID do caixa
 export const fetchMovimentosByCaixaId = async (caixaId) => {
@@ -65,27 +82,10 @@ export const fetchMovimentosByCaixaId = async (caixaId) => {
 // Função para adicionar um movimento
 export const addMovimento = async (caixaId, movimento) => {
     try {
-        const dataHora = new Date(movimento.dataHora);
-        if (isNaN(dataHora.getTime())) {
-            throw new Error('Data e hora inválidos');
-        }
-
-        const payload = {
-            operacao: movimento.operacao,
-            modalidade: movimento.modalidade,
-            valor: movimento.valor,
-            dataHoraMovimento: dataHora.toISOString(),
-            taxa: movimento.taxa || null,
-            dentista: movimento.dentista || null,
-            fornecedor: movimento.fornecedor || null,
-            tipoReceita: movimento.tipoReceita || null,
-            tipoDespesa: movimento.tipoDespesa || null
-        };
-
-        const response = await api.post(`${API_BASE_URL}/${caixaId}/movimentos`, payload);
+        const response = await api.post(`${API_BASE_URL}/${caixaId}/movimentos`, movimento);
         return response.data;
     } catch (error) {
-        console.error('Erro ao adicionar movimento:', error.response?.data || error.message);
+        console.error("Erro ao adicionar movimento:", error.response ? error.response.data : error.message);
         throw error;
     }
 };
@@ -114,10 +114,9 @@ export const deleteMovimento = async (caixaId, id) => {
 export const downloadRelatorioCaixas = async () => {
     try {
         const response = await api.get(`${API_BASE_URL}/caixas`, {
-            responseType: 'blob' // Para lidar com arquivos binários
+            responseType: 'blob'
         });
 
-        // Cria um URL para o blob e retorna
         const url = window.URL.createObjectURL(new Blob([response.data]));
         return url;
     } catch (error) {

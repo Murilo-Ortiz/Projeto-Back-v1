@@ -2,57 +2,55 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from '../components/Dashboard';
 import Table from '../components/Table';
 import Footer from '../components/Footer';
-import styles from '../styles/pages/Fornecedores.module.css';
+import styles from '../styles/pages/Dentistas.module.css';
 import { useNavigate } from 'react-router-dom';
-import { fetchFornecedores } from '../api/fornecedores'; // Importando a função correta
+import { fetchFornecedores } from '../api/fornecedores';
 
 function Fornecedores() {
     const navigate = useNavigate();
     const [fornecedores, setFornecedores] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [generalError, setGeneralError] = useState(null);
 
     useEffect(() => {
         const loadFornecedores = async () => {
             try {
                 const data = await fetchFornecedores();
                 setFornecedores(data);
-            } catch (err) {
-                setError('Erro ao carregar fornecedores');
-                console.error(err);
-            } finally {
-                setLoading(false);
+            } catch (error) {
+                handleBackendError(error);
             }
         };
-
         loadFornecedores();
     }, []);
 
+    const handleBackendError = (error) => {
+        if (error.response && error.response.data) {
+            setGeneralError('Erro ao carregar fornecedores: ' + (error.response.data.message || 'Erro desconhecido'));
+        } else {
+            setGeneralError('Erro de conexão ou problema desconhecido ao carregar fornecedores.');
+        }
+        console.error('Erro ao buscar fornecedores:', error);
+    };
+
     const handleAddFornecedor = () => {
-        navigate('/novo-fornecedor'); // Redireciona para a página de criação
+        navigate('/novo-fornecedor');
     };
 
     const columns = [
         { key: 'nome', label: 'Nome' },
-        { key: 'fone', label: 'Telefone' },
-        { key: 'endereco', label: 'Endereço' }
+        { key: 'fone', label: 'Telefone' }
     ];
 
     const buttons = [
-        { type: 'add', text: 'Adicionar Novo Fornecedor', onClick: handleAddFornecedor }
+        { type: 'add', text: 'Adicionar Fornecedor', onClick: handleAddFornecedor }
     ];
 
     return (
-        <Dashboard>
-            <div className={styles.contentWrapper}>
-                {loading && <p>Carregando...</p>}
-                {error && <p>{error}</p>}
-                <Table
-                    data={fornecedores}
-                    columns={columns}
-                    onRowClick={(id) => navigate(`/fornecedor/${id}`)}
-                />
-                <Footer buttons={buttons} />
+        <Dashboard title="Fornecedores" error={generalError}>
+            <div className={styles.formWrapper}>
+                <h1 className={styles.title}>{'Fornecedores'}</h1>
+                <Table data={fornecedores} columns={columns} onEditClick={(id) => navigate(`/fornecedor/${id}`)}/>
+                <Footer buttons={buttons}/>
             </div>
         </Dashboard>
     );

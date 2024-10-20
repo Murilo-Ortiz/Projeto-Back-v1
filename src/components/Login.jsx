@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
-import { fetchUserIdByUsername } from "../api/user"; // Importe a função para obter o userId
 import styles from "../styles/pages/LoginPage.module.css";
+import {getMyInfo} from "../api/user";
 
 function Login() {
   const navigate = useNavigate();
@@ -21,17 +21,18 @@ function Login() {
 
 
       console.log(response);
-      const token = response.headers['authorization'].replace('Bearer ', '');
+      const token = response.headers['authorization'];
       if (token) {
         localStorage.setItem("authToken", token);
-        const userId = await fetchUserIdByUsername(username);
-        localStorage.setItem("userId", userId);
+        //const user = await getMyInfo();
+        //localStorage.setItem("userId", user);
+        localStorage.setItem('username', username);
         navigate("/caixa");
       } else {
         setError("Token não encontrado na resposta");
       }
 
-    } catch (err) {
+    } catch (error) {
       setError("Usuário ou senha incorretos");
     }
   };

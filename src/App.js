@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import Login from './components/Login';
 import Caixa from './pages/Caixa';
 import NovoMovimento from './pages/NovoMovimento';
-import DetalhesMovimento from './pages/DetalhesMovimento';
 import Dentistas from './pages/Dentistas';
 import Fornecedores from './pages/Fornecedores';
 import NovoFornecedor from './pages/NovoFornecedor'; // Adicionando a importação
@@ -14,7 +13,9 @@ import TipoDespesas from './pages/Despesas';
 import NovoTipoDespesa from './pages/NovoTipoDespesa';
 import PrivateRoute from './components/PrivateRoute';
 import NovoTipoReceita from './pages/NovoTipoReceita';
-import Logout from './components/Logout'; // Adicionando a importação
+import Logout from './components/Logout';
+import Usuarios from "./pages/Usuarios";
+import NovoUsuario from "./pages/NovoUsuario"; // Adicionando a importação
 
 function App() {
     return (
@@ -27,7 +28,7 @@ function App() {
 
                 <Route path="/caixa" element={<PrivateRoute><Caixa /></PrivateRoute>} />
                 <Route path="/novo-movimento" element={<PrivateRoute><NovoMovimento /></PrivateRoute>} />
-                <Route path="/detalhes-movimento/:id" element={<PrivateRoute><DetalhesMovimento /></PrivateRoute>} />
+                <Route path="/novo-movimento/:id" element={<PrivateRoute><NovoMovimento /></PrivateRoute>} />
 
                 <Route path="/dentistas" element={<PrivateRoute><Dentistas/></PrivateRoute>} />
                 <Route path="/novo-dentista" element={<PrivateRoute><NovoDentista /></PrivateRoute>} />
@@ -40,10 +41,18 @@ function App() {
                 <Route path="/relatorios" element={<PrivateRoute><Relatorios /></PrivateRoute>}/>
                 <Route path="/receitas" element={<PrivateRoute><Receitas /></PrivateRoute>} />
                 <Route path="/novo-tipo-receita" element={<PrivateRoute><NovoTipoReceita /></PrivateRoute>} />
-                <Route path="/tipo-receita/:id" element={<PrivateRoute><NovoTipoReceita /></PrivateRoute>} />
+                <Route path="/receitas/:id" element={<PrivateRoute><NovoTipoReceita /></PrivateRoute>} />
                 <Route path="/despesas" element={<PrivateRoute><TipoDespesas /></PrivateRoute>} />
                 <Route path="/novo-tipo-despesa" element={<PrivateRoute><NovoTipoDespesa /></PrivateRoute>} />
-                <Route path="/tipo-despesa/:id" element={<PrivateRoute><NovoTipoDespesa /></PrivateRoute>} />
+                <Route path="/despesas/:id" element={<PrivateRoute><NovoTipoDespesa /></PrivateRoute>} />
+                <Route path="/usuarios" element={<PrivateRoute><Usuarios /></PrivateRoute>} />
+                <Route path="/usuarios/:id" element={<PrivateRoute><Usuarios /></PrivateRoute>} />
+                <Route path="/novo-usuario" element={<PrivateRoute><NovoUsuario /></PrivateRoute>} />
+                <Route path="/usuario/:id/caixas" element={<PrivateRoute><Caixas /></PrivateRoute>} />
+                <Route path="/usuario/:id/caixas/:idCaixa" element={<PrivateRoute><UserCaixa /></PrivateRoute>} />
+                <Route path="/usuario/:id/caixas/:idCaixa/novo-movimento" element={<PrivateRoute><NovoMovimentoUser /></PrivateRoute>} />
+                <Route path="/usuario/:id/caixas/:idCaixa/novo-movimento/:idMov" element={<PrivateRoute><NovoMovimentoUser /></PrivateRoute>} />
+
             </Routes>
         </Router>
     );

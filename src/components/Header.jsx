@@ -6,6 +6,7 @@ import styles from "../styles/components/Header.module.css";
 function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const navigate = useNavigate();
+    const username = localStorage.getItem('username') || 'Perfil';
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -22,7 +23,9 @@ function Header() {
                     <div className={styles.profileIcon}>
                         <span>👤</span>
                     </div>
-                    <div className={styles.profileName}>Perfil</div>
+                    <div className={styles.profileName}>
+                        {username}
+                    </div>
                     <button className={styles.dropdownButton} onClick={toggleMenu}>
                         <GoChevronDown className={styles.dropdownIcon} />
                     </button>

@@ -18,18 +18,21 @@ function NovoDentista() {
         percentualRecebido: ''
     });
     const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false); // Estado para controlar o botão de salvar
-    const [errors, setErrors] = useState({}); // Estado para armazenar erros de validação
+    const [isSaving, setIsSaving] = useState(false);
+    const [errors, setErrors] = useState({});
+    const [generalError, setGeneralError] = useState(null);
+    const [title, setTitle] = useState("NOVO DENTISTA");
 
     useEffect(() => {
         if (id) {
+            setTitle('EDITAR DENTISTA');
             const getDentista = async () => {
                 try {
                     const data = await fetchDentistaById(id);
                     setDentista(data);
                     setIsEditing(true);
                 } catch (error) {
-                    console.error('Erro ao buscar dentista:', error);
+                    handleBackendError(error);
                 }
             };
             getDentista();
@@ -39,13 +42,12 @@ function NovoDentista() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setDentista((prev) => ({ ...prev, [name]: value }));
-        setErrors((prev) => ({ ...prev, [name]: '' })); // Limpa o erro do campo específico
+        setErrors((prev) => ({ ...prev, [name]: '' }));
     };
 
     const sanitizeDentista = (dentista) => {
         const sanitized = { ...dentista };
-        sanitized.cpf = dentista.cpf.replace(/[^\d]/g, ''); // Remove pontos e traços
-        sanitized.fone = dentista.fone.replace(/[^\d]/g, ''); // Remove parênteses, espaços e traços
+        sanitized.fone = dentista.fone.replace(/[^\d]/g, '');
         return sanitized;
     };
 
@@ -53,16 +55,16 @@ function NovoDentista() {
         const newErrors = {};
         if (!dentista.nome) newErrors.nome = 'O campo Nome é obrigatório.';
         if (!dentista.fone) newErrors.fone = 'O campo Telefone é obrigatório.';
-        if (!dentista.cpf) newErrors.cpf = 'O campo CPF é obrigatório.';
         if (!dentista.cro) newErrors.cro = 'O campo CRO é obrigatório.';
         if (!dentista.percentualRecebido) newErrors.percentualRecebido = 'O campo percentual é obrigatório.';
         return newErrors;
     };
 
     const handleSave = async () => {
-        if (isSaving) return; // Previne múltiplas submissões se já estiver salvando
+        if (isSaving) return;
 
-        setIsSaving(true); // Desativa o botão após o início do envio
+        setIsSaving(true);
+        setGeneralError(null);
 
         const newErrors = validateFields();
         if (Object.keys(newErrors).length > 0) {
@@ -81,13 +83,9 @@ function NovoDentista() {
             }
             navigate('/dentistas');
         } catch (error) {
-            if (error.response && error.response.status === 422) {
-                console.error('Erro de validação:', error.response.data.errors);
-            } else {
-                console.error('Erro ao salvar dentista:', error);
-            }
+            handleBackendError(error);
         } finally {
-            setIsSaving(false); // Reativa o botão após o envio
+            setIsSaving(false);
         }
     };
 
@@ -96,7 +94,7 @@ function NovoDentista() {
             await deleteDentista(id);
             navigate('/dentistas');
         } catch (error) {
-            console.error('Erro ao excluir dentista:', error);
+            handleBackendError(error); 
         }
     };
 
@@ -105,12 +103,30 @@ function NovoDentista() {
     };
 
     const handleSubmit = (e) => {
-        e.preventDefault(); // Previne o envio padrão do formulário
-        handleSave();       // Garante que o handleSave seja chamado apenas uma vez
+        e.preventDefault();
+        handleSave();
+    };
+
+    const handleBackendError = (error) => {
+        if (error.response && error.response.data) {
+            if (error.response.status === 422) {
+                const backendErrors = error.response.data.errors;
+                const formattedErrors = {};
+
+                for (let field in backendErrors) {
+                    formattedErrors[field] = backendErrors[field][0];
+                }
+                setErrors(formattedErrors);
+            } else {
+                setGeneralError('Erro no servidor: ' + (error.response.data.message || 'Erro desconhecido'));
+            }
+        } else {
+            setGeneralError('Erro de conexão ou problema desconhecido.');
+        }
     };
 
     const buttons = [
-        { type: 'save', text: 'Salvar', disabled: isSaving }, // Tipo 'submit' para garantir que o formulário envie
+        { type: 'save', text: 'Salvar', disabled: isSaving },
         { type: 'cancel', text: 'Voltar', onClick: handleCancel }
     ];
 
@@ -119,7 +135,7 @@ function NovoDentista() {
     }
 
     return (
-        <Dashboard>
+        <Dashboard title={title} error={generalError}>
             <div className={styles.formWrapper}>
                 <h1 className={styles.title}>{isEditing ? 'Editar Dentista' : 'Adicionar Novo Dentista'}</h1>
                 <form className={styles.form} onSubmit={handleSubmit}>
@@ -143,19 +159,6 @@ function NovoDentista() {
                             id="fone"
                             name="fone"
                             value={dentista.fone}
-                            onChange={handleChange}
-                        >
-                            {(inputProps) => <input {...inputProps} type="text" />}
-                        </InputMask>
-                    </div>
-                    <div className={styles.formGroup}>
-                        <label htmlFor="cpf">CPF</label>
-                        {errors.cpf && <span className={styles.error}>{errors.cpf}</span>}
-                        <InputMask
-                            mask="999.999.999-99"
-                            id="cpf"
-                            name="cpf"
-                            value={dentista.cpf}
                             onChange={handleChange}
                         >
                             {(inputProps) => <input {...inputProps} type="text" />}

@@ -1,57 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import InputMask from 'react-input-mask';
 import Dashboard from '../components/Dashboard';
 import Footer from '../components/Footer';
-import styles from '../styles/pages/NovoFornecedor.module.css';
-import { fetchFornecedorById, createFornecedor, updateFornecedor, deleteFornecedor } from '../api/fornecedores';
+import styles from '../styles/pages/NovoUsuario.module.css';
+import { fetchUserById, createUser, updateUsuario, deleteUser } from '../api/user';
 
-function NovoFornecedor() {
+function NovoUsuario() {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const [fornecedor, setFornecedor] = useState({
-        nome: '',
-        fone: ''
+    const [usuario, setUsuario] = useState({
+        username: '',
+        password: '',
+        email: ''
     });
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [errors, setErrors] = useState({});
     const [generalError, setGeneralError] = useState(null);
-    const [title, setTitle] = useState("NOVO DENTISTA");
+    const [title, setTitle] = useState('NOVO USUÁRIO');
 
     useEffect(() => {
         if (id) {
-            setTitle('EDITAR DENTISTA');
-            const getFornecedor = async () => {
+            const getUsuario = async () => {
                 try {
-                    const data = await fetchFornecedorById(id);
-                    setFornecedor(data);
+                    const data = await fetchUserById(id);
+                    setUsuario(data);
                     setIsEditing(true);
+                    setTitle('EDITAR USUÁRIO');
                 } catch (error) {
                     handleBackendError(error);
                 }
             };
-            getFornecedor();
+            getUsuario();
         }
     }, [id]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFornecedor((prev) => ({ ...prev, [name]: value }));
+        setUsuario((prev) => ({ ...prev, [name]: value }));
         setErrors((prev) => ({ ...prev, [name]: '' }));
     };
 
-    const sanitizeFornecedor = (fornecedor) => {
-        const sanitized = { ...fornecedor };
-        sanitized.fone = fornecedor.fone.replace(/[^\d]/g, '');
+    const sanitizeUsuario = (usuario) => {
+        const sanitized = { ...usuario };
         return sanitized;
     };
 
     const validateFields = () => {
         const newErrors = {};
-        if (!fornecedor.nome) newErrors.nome = 'O campo Nome é obrigatório.';
-        if (!fornecedor.fone) newErrors.fone = 'O campo Telefone é obrigatório.';
+        if (!usuario.username || usuario.username.length < 2 || usuario.username.length > 50) {
+            newErrors.username = 'O campo Login deve ter entre 2 e 50 caracteres.';
+        }
+        if (!usuario.password || usuario.password.length < 8 || usuario.password.length > 50) {
+            newErrors.password = 'A senha deve ter entre 8 e 50 caracteres.';
+        }
+        if (!usuario.email || !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(usuario.email)) {
+            newErrors.email = 'O email deve ser válido.';
+        }
         return newErrors;
     };
 
@@ -68,15 +74,15 @@ function NovoFornecedor() {
             return;
         }
 
-        const sanitizedFornecedor = sanitizeFornecedor(fornecedor);
+        const sanitizedUsuario = sanitizeUsuario(usuario);
 
         try {
             if (isEditing) {
-                await updateFornecedor(id, sanitizedFornecedor);
+                await updateUsuario(id, sanitizedUsuario);
             } else {
-                await createFornecedor(sanitizedFornecedor);
+                await createUser(sanitizedUsuario);
             }
-            navigate('/fornecedores');
+            navigate('/usuarios');
         } catch (error) {
             handleBackendError(error);
         } finally {
@@ -86,15 +92,15 @@ function NovoFornecedor() {
 
     const handleDelete = async () => {
         try {
-            await deleteFornecedor(id);
-            navigate('/fornecedores');
+            await deleteUser(id);
+            navigate('/usuarios');
         } catch (error) {
             handleBackendError(error);
         }
     };
 
     const handleCancel = () => {
-        navigate('/fornecedores');
+        navigate('/usuarios');
     };
 
     const handleSubmit = (e) => {
@@ -132,32 +138,43 @@ function NovoFornecedor() {
     return (
         <Dashboard title={title} error={generalError}>
             <div className={styles.formWrapper}>
-                <h1 className={styles.title}>{isEditing ? 'Editar Fornecedor' : 'Adicionar Novo Fornecedor'}</h1>
+                <h1 className={styles.title}>{isEditing ? 'Editar Usuário' : 'Adicionar Usuário'}</h1>
                 <form className={styles.form} onSubmit={handleSubmit}>
                     <div className={styles.formGroup}>
-                        <label htmlFor="nome">Nome</label>
-                        {errors.nome && <span className={styles.error}>{errors.nome}</span>}
+                        <label htmlFor="username">Login</label>
+                        {errors.username && <span className={styles.error}>{errors.username}</span>}
                         <input
-                            id="nome"
-                            name="nome"
+                            id="username"
+                            name="username"
                             type="text"
-                            maxLength="100"
-                            value={fornecedor.nome}
+                            maxLength="50"
+                            value={usuario.username}
                             onChange={handleChange}
                         />
                     </div>
                     <div className={styles.formGroup}>
-                        <label htmlFor="fone">Telefone</label>
-                        {errors.fone && <span className={styles.error}>{errors.fone}</span>}
-                        <InputMask
-                            mask="(99) 99999-9999"
-                            id="fone"
-                            name="fone"
-                            value={fornecedor.fone}
+                        <label htmlFor="password">Senha</label>
+                        {errors.password && <span className={styles.error}>{errors.password}</span>}
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            maxLength="50"
+                            value={usuario.password}
                             onChange={handleChange}
-                        >
-                            {(inputProps) => <input {...inputProps} type="text" />}
-                        </InputMask>
+                        />
+                    </div>
+                    <div className={styles.formGroup}>
+                        <label htmlFor="email">Email</label>
+                        {errors.email && <span className={styles.error}>{errors.email}</span>}
+                        <input
+                            id="email"
+                            name="email"
+                            type="email"
+                            maxLength="320"
+                            value={usuario.email}
+                            onChange={handleChange}
+                        />
                     </div>
                     <Footer buttons={buttons} />
                 </form>
@@ -166,4 +183,4 @@ function NovoFornecedor() {
     );
 }
 
-export default NovoFornecedor;
+export default NovoUsuario;

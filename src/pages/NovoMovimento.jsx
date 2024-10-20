@@ -5,53 +5,66 @@ import Footer from '../components/Footer';
 import styles from '../styles/pages/NovoMovimento.module.css';
 import { fetchDentistas } from '../api/dentistas';
 import { fetchFornecedores } from '../api/fornecedores';
-import { fetchTipoReceitas } from '../api/tipoReceita';
-import { fetchTipoDespesas } from '../api/tipoDespesa';
+import { fetchReceita } from '../api/tipoReceita';
+import { fetchDespesa } from '../api/tipoDespesa';
 import {
     addMovimento,
     updateMovimento,
     deleteMovimento,
-    fetchMovimentosByCaixaId, checkCaixaStatus
+    fetchMovimentosByCaixaId,
+    checkCaixaStatus
 } from '../api/caixa';
 
 function NovoMovimento() {
     const { id } = useParams();
     const navigate = useNavigate();
 
+    const dataHora = new Date();
+    const offset = dataHora.getTimezoneOffset();
+    const adjustedDate = new Date(dataHora.getTime() - offset * 60000).toISOString();
+
     const [movimento, setMovimento] = useState({
         operacao: '',
         modalidade: 'Dinheiro',
         valor: '',
         descricao: '',
-        dataHora: new Date().toISOString().slice(0, 16),
+        dataHora: new Date(dataHora.getTime() - offset * 60000).toISOString().slice(0, 16),
         taxa: 5,
         dentista: '',
         fornecedor: '',
         tipoReceita: '',
         tipoDespesa: ''
     });
+
     const [isEditing, setIsEditing] = useState(false);
     const [dentistas, setDentistas] = useState([]);
     const [fornecedores, setFornecedores] = useState([]);
     const [tipoReceitas, setTipoReceitas] = useState([]);
     const [tipoDespesas, setTipoDespesas] = useState([]);
+    const [caixaId, setCaixaId] = useState(null);
+    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         const loadData = async () => {
             try {
                 const userId = localStorage.getItem('userId');
-                const caixaId = checkCaixaStatus(userId);
-                if (!caixaId) {
-                    console.error('Caixa não encontrado no localStorage');
-                    navigate('/caixa'); // Redireciona se o caixaId não estiver disponível
+                const caixaStatus = await checkCaixaStatus(userId);
+
+                if (caixaStatus && caixaStatus.id) {
+                    setCaixaId(caixaStatus.id);
+                } else {
+                    console.error('Caixa não encontrado ou está fechado');
+                    navigate('/caixa');
                     return;
                 }
+
+
 
                 const [dentistasData, fornecedoresData, tipoReceitasData, tipoDespesasData] = await Promise.all([
                     fetchDentistas(),
                     fetchFornecedores(),
-                    fetchTipoReceitas(),
-                    fetchTipoDespesas()
+                    fetchReceita(),
+                    fetchDespesa()
                 ]);
 
                 setDentistas(dentistasData);
@@ -60,10 +73,19 @@ function NovoMovimento() {
                 setTipoDespesas(tipoDespesasData);
 
                 if (id) {
-                    const movimentoData = await fetchMovimentosByCaixaId(caixaId);
+                    const movimentoData = await fetchMovimentosByCaixaId(caixaStatus.id);
                     const movimentoToEdit = movimentoData.find(m => m.id === parseInt(id));
-                    setMovimento(movimentoToEdit || {});
-                    setIsEditing(true);
+                    if (movimentoToEdit) {
+                        setMovimento({
+                            ...movimentoToEdit,
+                            dataHora: new Date(movimentoToEdit.dataHora).toISOString().slice(0, 16),
+                            modalidade: movimentoToEdit.operacao === 'Sangria' || movimentoToEdit.operacao === 'Aporte' ? 'Dinheiro' : movimentoToEdit.modalidade
+                        });
+                        setIsEditing(true);
+                    } else {
+                        console.error('Movimento não encontrado');
+                        navigate('/caixa');
+                    }
                 }
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
@@ -80,29 +102,43 @@ function NovoMovimento() {
 
     const handleSave = async () => {
         try {
-            const userId = localStorage.getItem('userId');
-            const caixaId = localStorage.getItem(`caixaId`); // Obtém o caixaId do localStorage
             if (!caixaId) {
-                console.error('Caixa não encontrado no localStorage');
+                console.error('Caixa não encontrado');
                 return;
             }
-            if (isEditing) {
-                await updateMovimento(caixaId, id, movimento);
-            } else {
-                await addMovimento(caixaId, movimento);
+
+            if (!validateFields()) {
+                return; // Interrompe o processo se houver erro
             }
+
+            const movimentoData = {
+                operacao: movimento.operacao.toUpperCase(),
+                modalidade: movimento.modalidade.toUpperCase(),
+                valor: parseFloat(movimento.valor.replace(',', '.')), // Converte o valor para float
+                dataHoraMovimento: adjustedDate, // Conversão para ISO 8601
+                receitaId: movimento.tipoReceita ? parseInt(movimento.tipoReceita) : null,
+                despesaId: movimento.tipoDespesa ? parseInt(movimento.tipoDespesa) : null,
+                dentistaId: movimento.dentista ? parseInt(movimento.dentista) : null,
+                fornecedorId: movimento.fornecedor && movimento.fornecedor !== 'Nenhum' ? parseInt(movimento.fornecedor) : null
+            };
+
+            if (isEditing) {
+                await updateMovimento(caixaId, id, movimentoData);
+            } else {
+                await addMovimento(caixaId, movimentoData);
+            }
+
             navigate('/caixa');
         } catch (error) {
-            console.error('Erro ao salvar movimento:', error);
+            console.error('Erro ao salvar movimento:', error.response ? error.response.data : error.message);
         }
     };
 
+
     const handleDelete = async () => {
         try {
-            const userId = localStorage.getItem('userId');
-            const caixaId = localStorage.getItem(`caixaId`); // Obtém o caixaId do localStorage
             if (!caixaId) {
-                console.error('Caixa não encontrado no localStorage');
+                console.error('Caixa não encontrado');
                 return;
             }
             await deleteMovimento(caixaId, id);
@@ -114,6 +150,31 @@ function NovoMovimento() {
 
     const handleCancel = () => {
         navigate('/caixa');
+    };
+
+    const validateFields = () => {
+        if (!movimento.operacao) {
+            setErrorMessage('Operação é obrigatória.');
+            return false;
+        }
+
+        if (!movimento.valor) {
+            setErrorMessage('Valor é obrigatório.');
+            return false;
+        }
+
+        if (movimento.operacao === 'Receita' && !movimento.tipoReceita) {
+            setErrorMessage('Tipo de Receita é obrigatório.');
+            return false;
+        }
+
+        if (movimento.operacao === 'Despesa' && !movimento.tipoDespesa) {
+            setErrorMessage('Tipo de Despesa é obrigatório.');
+            return false;
+        }
+
+        setErrorMessage('');
+        return true;
     };
 
     const buttons = [
@@ -176,7 +237,7 @@ function NovoMovimento() {
                                     <option value="">Selecione o Tipo de Receita</option>
                                     {tipoReceitas.map((tipo) => (
                                         <option key={tipo.id} value={tipo.id}>
-                                            {tipo.nome}
+                                            {tipo.descricao}
                                         </option>
                                     ))}
                                 </select>
@@ -189,7 +250,7 @@ function NovoMovimento() {
                                     value={movimento.dentista}
                                     onChange={handleChange}
                                 >
-                                    <option value="">Nenhum Dentista</option>
+                                    <option value="">Selecione o Dentista</option>
                                     {dentistas.map((dentista) => (
                                         <option key={dentista.id} value={dentista.id}>
                                             {dentista.nome}
@@ -212,23 +273,7 @@ function NovoMovimento() {
                                     <option value="">Selecione o Tipo de Despesa</option>
                                     {tipoDespesas.map((tipo) => (
                                         <option key={tipo.id} value={tipo.id}>
-                                            {tipo.nome}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label htmlFor="fornecedor">Fornecedor</label>
-                                <select
-                                    id="fornecedor"
-                                    name="fornecedor"
-                                    value={movimento.fornecedor}
-                                    onChange={handleChange}
-                                >
-                                    <option value="">Nenhum Fornecedor</option>
-                                    {fornecedores.map((fornecedor) => (
-                                        <option key={fornecedor.id} value={fornecedor.id}>
-                                            {fornecedor.nome}
+                                            {tipo.descricao}
                                         </option>
                                     ))}
                                 </select>
@@ -241,7 +286,7 @@ function NovoMovimento() {
                                     value={movimento.dentista}
                                     onChange={handleChange}
                                 >
-                                    <option value="">Nenhum Dentista</option>
+                                    <option value="">Selecione o Dentista</option>
                                     {dentistas.map((dentista) => (
                                         <option key={dentista.id} value={dentista.id}>
                                             {dentista.nome}
@@ -249,50 +294,63 @@ function NovoMovimento() {
                                     ))}
                                 </select>
                             </div>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="fornecedor">Fornecedor</label>
+                                <select
+                                    id="fornecedor"
+                                    name="fornecedor"
+                                    value={movimento.fornecedor}
+                                    onChange={handleChange}
+                                >
+                                    <option value="Nenhum">Nenhum</option>
+                                    <option value="">Selecione o Fornecedor</option>
+                                    {fornecedores.map((fornecedor) => (
+                                        <option key={fornecedor.id} value={fornecedor.id}>
+                                            {fornecedor.nome}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </>
                     )}
-                    <div className={styles.modalidadeTaxaValor}>
-                        <div className={styles.formGroupHalf}>
+                    {movimento.operacao && (
+                        <div className={styles.formGroup}>
                             <label htmlFor="modalidade">Modalidade de Pagamento</label>
                             <select
                                 id="modalidade"
                                 name="modalidade"
                                 value={movimento.modalidade}
                                 onChange={handleChange}
-                                disabled={movimento.operacao === 'Sangria' || movimento.operacao === 'Aporte'}
+                                disabled={movimento.operacao === 'Aporte' || movimento.operacao === 'Sangria'}
                             >
                                 <option value="Dinheiro">Dinheiro</option>
-                                <option value="Crédito">Crédito</option>
-                                <option value="Débito">Débito</option>
+                                <option value="Cartão">Cartão</option>
+                                <option value="Transferência">Transferência</option>
                             </select>
                         </div>
-                        {movimento.modalidade === 'Crédito' && (
-                            <div className={styles.formGroupHalf}>
-                                <label htmlFor="taxa">Taxa (%)</label>
-                                <input
-                                    id="taxa"
-                                    name="taxa"
-                                    type="number"
-                                    value={movimento.taxa}
-                                    onChange={handleChange}
-                                    min="0"
-                                    step="0.01"
-                                />
-                            </div>
-                        )}
-                        <div className={styles.formGroupHalf}>
-                            <label htmlFor="valor">Valor</label>
+                    )}
+                    {(movimento.modalidade === 'Cartão' || movimento.modalidade === 'Transferência') && (
+                        <div className={styles.formGroup}>
+                            <label htmlFor="taxa">Taxa (%)</label>
                             <input
-                                id="valor"
-                                name="valor"
+                                id="taxa"
+                                name="taxa"
                                 type="number"
-                                value={movimento.valor}
-                                onChange={handleChange}
-                                min="0"
                                 step="0.01"
-                                required
+                                value={movimento.taxa}
+                                onChange={handleChange}
                             />
                         </div>
+                    )}
+                    <div className={styles.formGroup}>
+                        <label htmlFor="valor">Valor</label>
+                        <input
+                            id="valor"
+                            name="valor"
+                            type="text"
+                            value={movimento.valor}
+                            onChange={handleChange}
+                        />
                     </div>
                     <div className={styles.formGroup}>
                         <label htmlFor="descricao">Descrição</label>

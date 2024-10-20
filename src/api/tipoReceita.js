@@ -1,79 +1,79 @@
-import api from './api'; // Importe a instância do axios
+import api from './api';
 
-const API_BASE_URL = 'api/receita';
+const API_BASE_URL = '/receita';
 
-// Função para obter todos os tipos de receita
-export const fetchTipoReceitas = async () => {
+export const fetchReceita = async () => {
     try {
-        const response = await api.get(`${API_BASE_URL}`);
+        const response = await api.get(API_BASE_URL);
         if (response.status !== 200) {
-            throw new Error('Failed to fetch tipos de receita');
+            throw new Error('Failed to fetch receita');
         }
-        return response.data; // `response.data` contém o JSON retornado
+        return response.data;
     } catch (error) {
-        console.error(error);
-        throw error; // Repassa o erro para o chamador
+        console.error('Erro ao buscar receita:', error);
+        throw error;
     }
 };
 
-// Função para obter um tipo de receita pelo ID
-export const fetchTipoReceitaById = async (id) => {
+export const fetchReceitaById = async (id) => {
     try {
         const response = await api.get(`${API_BASE_URL}/${id}`);
         if (response.status !== 200) {
-            throw new Error('Failed to fetch tipo de receita');
+            throw new Error('Failed to fetch receita');
         }
-        return response.data; // `response.data` contém o JSON retornado
+        return response.data;
     } catch (error) {
-        console.error(error);
-        throw error; // Repassa o erro para o chamador
+        console.error('Erro ao buscar receita:', error);
+        throw error;
     }
 };
 
-// Função para criar um novo tipo de receita
-export const createTipoReceita = async (tipoReceita) => {
+export const createReceita = async (receita) => {
     try {
-        const response = await api.post(`${API_BASE_URL}`, tipoReceita, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const payload = {
+            descricao: receita.descricao || '',
+        };
+
+
+        const response = await api.post(API_BASE_URL, payload);
+
         if (response.status !== 201) {
-            throw new Error('Failed to create tipo de receita');
+            throw new Error('Failed to create receita');
         }
-        return response.data; // `response.data` contém o JSON retornado
+
+        return response.data;
     } catch (error) {
-        console.error(error);
-        throw error; // Repassa o erro para o chamador
+        console.error('Erro ao criar receita:', error.response?.data || error.message);
+        throw error;
     }
 };
 
-// Função para atualizar um tipo de receita
-export const updateTipoReceita = async (id, tipoReceita) => {
+export const updateReceita = async (id, receita) => {
     try {
-        const response = await api.put(`${API_BASE_URL}/${id}`, tipoReceita, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        if (response.status !== 200) {
-            throw new Error('Failed to update tipo de receita');
+        const payload = {
+            descricao: receita.descricao || '',
+        };
+
+        const response = await api.put(`${API_BASE_URL}/${id}`, payload);
+
+        if (response.status !== 200 && response.status !== 204) {
+            throw new Error('Failed to update receita');
         }
+        return response.data;
     } catch (error) {
-        console.error(error);
-        throw error; // Repassa o erro para o chamador
+        console.error('Erro ao atualizar receita:', error.response?.data || error.message);
+        throw error;
     }
 };
 
-// Função para deletar um tipo de receita
-export const deleteTipoReceita = async (id) => {
+export const deleteReceita = async (id) => {
     try {
         const response = await api.delete(`${API_BASE_URL}/${id}`);
-        if (response.status !== 200) {
-            throw new Error('Failed to delete tipo de receita');
+        if (response.status !== 204) {
+            throw new Error('Failed to delete receita');
         }
     } catch (error) {
-        console.error(error);
-        throw error; // Repassa o erro para o chamador
+        console.error('Erro ao excluir receita:', error);
+        throw error;
     }
 };

@@ -15,7 +15,14 @@
     position: relative;
 }
 
+.dashboardTitle {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
 
+.dashboardTitle {
+    text-align: center;
+}
 .header {
     width: calc(100% - 20%);
     height: 60px;

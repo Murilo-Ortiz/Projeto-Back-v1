@@ -1,57 +1,107 @@
 // src/api/user.js
 
-import api from './api'; // Certifique-se de que o caminho para o arquivo api.js está correto
-const API_BASE_URL = 'api/usuario';
+import api from './api';
 
-export const getUserById = async (userId) => {
+export const getMyInfo = async () => {
     try {
-        const response = await api.get(`/usuario/${userId}`);
+        const response = await api.get(`/me`);
         return response.data;
     } catch (error) {
-        console.error('Erro ao obter usuário:', error);
+        console.error('Erro ao obter dados do usuário:', error);
         throw error;
     }
 };
 
-export const createUser = async (userData) => {
+export const updateMyInfo = async (user) => {
     try {
-        const response = await api.post('/usuario', userData);
-        return response;
-    } catch (error) {
-        console.error('Erro ao criar usuário:', error);
-        throw error;
-    }
-};
+        const payload = {
+            descricao: user.descricao || '',
+        };
 
-export const updateUser = async (userId, userData) => {
-    try {
-        const response = await api.put(`/usuario/${userId}`, userData);
-        return response;
-    } catch (error) {
-        console.error('Erro ao atualizar usuário:', error);
-        throw error;
-    }
-};
+        const response = await api.put(`/me`, payload);
 
-export const deleteUser = async (userId) => {
-    try {
-        const response = await api.delete(`/usuario/${userId}`);
-        return response;
-    } catch (error) {
-        console.error('Erro ao deletar usuário:', error);
-        throw error;
-    }
-};
-
-export const fetchUserIdByUsername = async (username) => {
-    try {
-        const response = await api.get(`${API_BASE_URL}/username`, {params: {username}});
-        if (response.status !== 200) {
-            throw new Error('Failed to fetch user ID');
+        if (response.status !== 200 && response.status !== 204) {
+            throw new Error('Failed to update user');
         }
-        return response.data; // `response.data` contém o userId
+        return response.data;
     } catch (error) {
-        console.error(error);
-        throw error; // Repassa o erro para o chamador
+        console.error('Erro ao atualizar usuario:', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+export const fetchUsers = async () => {
+    try {
+        const response = await api.get('/admin/users');
+        if (response.status !== 200) {
+            throw new Error('Failed to fetch users');
+        }
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao buscar users:', error);
+        throw error;
+    }
+};
+
+export const fetchUserById = async (id) => {
+    try {
+        const response = await api.get(`/admin/user/${id}`);
+        if (response.status !== 200) {
+            throw new Error('Failed to fetch user');
+        }
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao buscar usuario:', error);
+        throw error;
+    }
+};
+
+export const createUser = async (user) => {
+    try {
+        const payload = {
+            descricao: user.descricao || '',
+        };
+
+
+        const response = await api.post('/admin/user', payload);
+
+        if (response.status !== 201) {
+            throw new Error('Failed to create user');
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao criar usuario:', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+export const updateUsuario = async (id, user) => {
+    try {
+        const payload = {
+            descricao: user.descricao || '',
+        };
+
+        const response = await api.put(`/admin/user/${id}`, payload);
+
+        if (response.status !== 200 && response.status !== 204) {
+            throw new Error('Failed to update user');
+        }
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao atualizar usuario:', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+export const deleteUser = async (id) => {
+    try {
+        const response = await api.delete(`/admin/user/${id}`);
+        if (response.status !== 204) {
+            throw new Error('Failed to delete usuario');
+        }
+    } catch (error) {
+        console.error('Erro ao excluir usuario:', error);
+        throw error;
     }
 };

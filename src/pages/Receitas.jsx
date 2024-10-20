@@ -1,62 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Dashboard from '../components/Dashboard';
 import Table from '../components/Table';
 import Footer from '../components/Footer';
-import styles from '../styles/pages/Receitas.module.css';
-import { fetchTipoReceitas, deleteTipoReceita } from '../api/tipoReceita';
+import styles from '../styles/pages/Dentistas.module.css';
+import { useNavigate } from 'react-router-dom';
+import { fetchReceita } from '../api/tipoReceita';
 
-// Função de formatação para descrição
-const formatDescricao = (descricao) => {
-    return descricao
-        .toLowerCase()
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-};
-
-function TipoReceitas() {
-    const [tipoReceitas, setTipoReceitas] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+function TipoReceita() {
     const navigate = useNavigate();
+    const [receitas, setReceitas] = useState([]);
+    const [generalError, setGeneralError] = useState(null);
 
     useEffect(() => {
-        const loadTipoReceitas = async () => {
+        const loadReceitas = async () => {
             try {
-                const data = await fetchTipoReceitas();
-                // Formatar descrição antes de definir o estado
-                const formattedData = data.map(tipo => ({
-                    ...tipo,
-                    descricao: formatDescricao(tipo.descricao)
-                }));
-                setTipoReceitas(formattedData);
+                const data = await fetchReceita();
+                setReceitas(data);
             } catch (error) {
-                setError('Erro ao carregar tipos de receita');
-                console.error(error);
-            } finally {
-                setLoading(false);
+                handleBackendError(error);
             }
         };
-
-        loadTipoReceitas();
+        loadReceitas();
     }, []);
 
-    const handleAddTipoReceita = () => {
-        navigate('/novo-tipo-receita');
-    };
-
-    const handleRowClick = (id) => {
-        navigate(`/tipo-receita/${id}`);
-    };
-
-    const handleDeleteTipoReceita = async (id) => {
-        try {
-            await deleteTipoReceita(id);
-            setTipoReceitas(tipoReceitas.filter(tipo => tipo.id !== id));
-        } catch (error) {
-            console.error('Erro ao excluir tipo de receita:', error);
+    const handleBackendError = (error) => {
+        if (error.response && error.response.data) {
+            setGeneralError('Erro ao carregar receitas: ' + (error.response.data.message || 'Erro desconhecido'));
+        } else {
+            setGeneralError('Erro de conexão ou problema desconhecido ao carregar receitas.');
         }
+        console.error('Erro ao buscar tipo receita:', error);
+    };
+
+    const handleAddReceita = () => {
+        navigate('/novo-tipo-receita');
     };
 
     const columns = [
@@ -64,24 +41,18 @@ function TipoReceitas() {
     ];
 
     const buttons = [
-        { type: 'add', text: 'Adicionar Novo Tipo de Receita', onClick: handleAddTipoReceita }
+        { type: 'add', text: 'Adicionar Tipo Receita', onClick: handleAddReceita }
     ];
 
     return (
-        <Dashboard>
-            <div className={styles.contentWrapper}>
-                {loading && <p>Carregando...</p>}
-                {error && <p>{error}</p>}
-                <Table
-                    data={tipoReceitas}
-                    columns={columns}
-                    onRowClick={handleRowClick}
-                    onDelete={handleDeleteTipoReceita}
-                />
-                <Footer buttons={buttons} />
+        <Dashboard title="Tipo Receita" error={generalError}>
+            <div className={styles.formWrapper}>
+                <h1 className={styles.title}>{'Tipo de Receita'}</h1>
+                <Table data={receitas} columns={columns} onEditClick={(id) => navigate(`/receitas/${id}`)}/>
+                <Footer buttons={buttons}/>
             </div>
         </Dashboard>
     );
 }
 
-export default TipoReceitas;
+export default  TipoReceita;

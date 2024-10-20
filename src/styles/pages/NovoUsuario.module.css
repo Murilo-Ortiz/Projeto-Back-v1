@@ -1,4 +1,3 @@
-
 .formWrapper {
     padding: 20px;
     max-width: 600px;
@@ -45,27 +44,6 @@
     border-color: #007bff;
     box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
     outline: none;
-}
-
-.submitButton {
-    background-color: #007bff;
-    color: #fff;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 18px;
-    transition: background-color 0.3s, transform 0.3s;
-}
-
-.submitButton:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
-}
-
-.submitButton:active {
-    background-color: #004494;
-    transform: translateY(0);
 }
 .error {
     color: red;

@@ -1,6 +1,8 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import styles from "../styles/components/Sidebar.module.css";
+import HelpModal from "./HelpModal";
 
 const menuItems = [
   {
@@ -35,8 +37,17 @@ const menuItems = [
   },
 ];
 
-function Sidebar() {
+function Sidebar({ showUsers, currentScreen }) {
   const location = useLocation();
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  const handleHelpClick = () => {
+    setIsHelpOpen(true);
+  };
+
+  const handleCloseHelp = () => {
+    setIsHelpOpen(false);
+  };
 
   return (
       <aside className={styles.sidebar}>
@@ -53,15 +64,33 @@ function Sidebar() {
               <Link
                   key={item.link}
                   to={item.link}
-                  className={`${styles.menuItem} ${
-                      location.pathname === item.link ? styles.activeMenuItem : ""
-                  }`}
+                  className={`${styles.menuItem} ${location.pathname === item.link ? styles.activeMenuItem : ""}`}
               >
                 <img src={item.icon} alt={item.label} className={styles.menuIcon} />
                 <span>{item.label}</span>
               </Link>
           ))}
+          {showUsers && (
+              <Link
+                  key="/usuarios"
+                  to="/usuarios"
+                  className={`${styles.menuItem} ${location.pathname === "/usuarios" ? styles.activeMenuItem : ""}`}
+              >
+                <img
+                    src="https://cdn.builder.io/api/v1/image/assets/TEMP/your_user_icon.png"
+                    alt="Usuários"
+                    className={styles.menuIcon}
+                />
+                <span>Usuários</span>
+              </Link>
+          )}
         </div>
+        <div className={styles.helpSection}>
+          <button onClick={handleHelpClick} className={styles.helpButton}>
+            Ajuda
+          </button>
+        </div>
+        <HelpModal isOpen={isHelpOpen} onClose={handleCloseHelp} currentScreen={currentScreen} />
       </aside>
   );
 }

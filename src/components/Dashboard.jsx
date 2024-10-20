@@ -1,18 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
-import Header from './Header';
+import ErrorPopup from './ErrorPopup';
 import styles from '../styles/components/Dashboard.module.css';
+import Header from "./Header";
 
-const Dashboard = ({ children }) => {
+const Dashboard = ({ children, title, error }) => {
+    const [erro, setError] = useState(error);
+    const[admin, setAdmin] = useState(true);
+
+    useEffect(() => {
+        const user = localStorage.getItem('userIsAdmin');
+            if(user){
+                setAdmin(true);
+            };
+        setError(error);
+    }, [error]);
+
+    const handleCloseError = () => {
+        setError(null);
+    };
+
     return (
         <div className={styles.dashboard}>
-            <Sidebar />
+            <Sidebar showUsers={admin}/>
             <div className={styles.mainContent}>
-                <Header />
+                <Header/>
                 <div className={styles.contentWrapper}>
-                    {children} {/* Conteúdo dinâmico */}
+                    {children}
                 </div>
             </div>
+
+            <ErrorPopup message={erro} onClose={handleCloseError}/>
         </div>
     );
 };

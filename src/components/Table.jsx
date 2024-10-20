@@ -1,176 +1,119 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { FaEdit } from 'react-icons/fa'; // Importando ícone de lápis
 import styles from '../styles/components/Table.module.css';
 
-function Table({ data, columns, onRowClick, onDelete, onSearch, usePagination = true }) {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filteredData, setFilteredData] = useState(data);
+function Table({ data, columns, onEditClick }) {
+    const rowsPerPage = 5;
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10); // Ajuste o número de itens por página conforme necessário
+    const maxPageButtons = 5; // Número máximo de botões de página visíveis
 
-    // Atualiza o estado `filteredData` sempre que `data`, `searchTerm`, ou `currentPage` mudar
-    useEffect(() => {
-        if (!onSearch) {
-            // Filtragem local se `onSearch` não estiver definido
-            const filtered = data.filter((item) =>
-                columns.some((column) =>
-                    item[column.key]?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-                )
-            );
-            setFilteredData(filtered);
-        }
-    }, [data, searchTerm, columns, onSearch, currentPage]);
+    if (!data || !columns) return null;
 
-    // Lida com mudanças no campo de busca
-    const handleSearchChange = (e) => {
-        const value = e.target.value;
-        setSearchTerm(value);
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const currentRows = data.slice(indexOfFirstRow, indexOfLastRow);
 
-        if (onSearch) {
-            // Se uma função `onSearch` for passada, ela é chamada
-            onSearch(value);
+    const totalPages = Math.ceil(data.length / rowsPerPage);
+
+    const handlePageChange = (newPage) => {
+        if (newPage > 0 && newPage <= totalPages) {
+            setCurrentPage(newPage);
         }
     };
 
-    // Função para alterar a página
-    const handlePageChange = (pageNumber) => {
-        setCurrentPage(pageNumber);
+    // Função para determinar o intervalo de páginas a exibir
+    const getPageRange = () => {
+        const halfRange = Math.floor(maxPageButtons / 2);
+        let startPage = Math.max(1, currentPage - halfRange);
+        let endPage = Math.min(totalPages, currentPage + halfRange);
+
+        if (currentPage <= halfRange) {
+            endPage = Math.min(totalPages, maxPageButtons);
+        } else if (currentPage + halfRange >= totalPages) {
+            startPage = Math.max(1, totalPages - maxPageButtons + 1);
+        }
+
+        return [...Array(endPage - startPage + 1)].map((_, i) => startPage + i);
     };
-
-    // Total de páginas
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-
-    // Calcula o índice inicial e final dos itens a serem exibidos na página atual
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
     return (
         <div className={styles.tableContainer}>
-            {/* Barra de pesquisa acima da tabela */}
             <div className={styles.searchBar}>
                 <input
                     type="text"
                     placeholder="Pesquisar..."
-                    value={searchTerm}
-                    onChange={handleSearchChange}
                     className={styles.searchInput}
                 />
             </div>
-
-            {usePagination ? (
-                <>
-                    <table className={styles.table}>
-                        <thead>
-                        <tr className={styles.nonSelectable}>
-                            {columns.map((column) => (
-                                <th key={column.key}>{column.label}</th>
-                            ))}
-                            <th>Actions</th> {/* Coluna para as ações, como editar e excluir */}
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {currentItems.length > 0 ? (
-                            currentItems.map((item) => (
-                                <tr key={item.id} onClick={() => onRowClick(item.id)}>
-                                    {columns.map((column) => (
-                                        <td key={column.key}>
-                                            {item[column.key] !== undefined ? item[column.key] : 'N/A'}
-                                        </td>
-                                    ))}
-                                    <td>
-                                        {/* Botão de edição */}
-                                        <button
-                                            className={styles.editButton}
-                                        >
-                                            ✏️
-                                        </button>
-
-                                        {/* Botão de exclusão, mostrado apenas se `onDelete` for passado */}
-                                        {onDelete && (
-                                            <button
-                                                className={styles.deleteButton}
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // Evita acionar o clique da linha
-                                                    onDelete(item.id);
-                                                }}
-                                            >
-                                                🗑️
-                                            </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={columns.length + 1}>Nenhum dado encontrado</td>
-                            </tr>
-                        )}
-                        </tbody>
-                    </table>
-
-                    {/* Paginação */}
-                    <div className={styles.pagination}>
-                        {Array.from({ length: totalPages }, (_, index) => (
-                            <button
-                                key={index + 1}
-                                className={currentPage === index + 1 ? styles.activePage : ''}
-                                onClick={() => handlePageChange(index + 1)}
-                            >
-                                {index + 1}
-                            </button>
+            <table className={styles.table}>
+                <thead>
+                <tr>
+                    {columns.map((col) => (
+                        <th key={col.key}>{col.label}</th>
+                    ))}
+                    <th>Ações</th> {/* Coluna para os ícones de ação */}
+                </tr>
+                </thead>
+                <tbody>
+                {currentRows.map((row) => (
+                    <tr key={row.id}>
+                        {columns.map((col) => (
+                            <td key={col.key}>
+                                {typeof row[col.key] === 'object'
+                                    ? JSON.stringify(row[col.key])
+                                    : row[col.key]}
+                            </td>
                         ))}
-                    </div>
-                </>
-            ) : (
-                <table className={styles.table}>
-                    <thead>
-                    <tr className={styles.nonSelectable}>
-                        {columns.map((column) => (
-                            <th key={column.key}>{column.label}</th>
-                        ))}
-                        <th>Actions</th> {/* Coluna para as ações, como editar e excluir */}
+                        <td className={styles.editIcon}>
+                            <FaEdit
+                                title="Editar" // Tooltip simples usando o atributo title
+                                onClick={() => onEditClick(row.id)}
+                                className={styles.icon}
+                            />
+                        </td>
                     </tr>
-                    </thead>
-                    <tbody>
-                    {filteredData.length > 0 ? (
-                        filteredData.map((item) => (
-                            <tr key={item.id} onClick={() => onRowClick(item.id)}>
-                                {columns.map((column) => (
-                                    <td key={column.key}>
-                                        {item[column.key] !== undefined ? item[column.key] : 'N/A'}
-                                    </td>
-                                ))}
-                                <td>
-                                    {/* Botão de edição */}
-                                    <button
-                                        className={styles.editButton}
-                                    >
-                                        ✏️
-                                    </button>
-
-                                    {/* Botão de exclusão, mostrado apenas se `onDelete` for passado */}
-                                    {onDelete && (
-                                        <button
-                                            className={styles.deleteButton}
-                                            onClick={(e) => {
-                                                e.stopPropagation(); // Evita acionar o clique da linha
-                                                onDelete(item.id);
-                                            }}
-                                        >
-                                            🗑️
-                                        </button>
-                                    )}
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan={columns.length + 1}>Nenhum dado encontrado</td>
-                        </tr>
-                    )}
-                    </tbody>
-                </table>
-            )}
+                ))}
+                </tbody>
+            </table>
+            <div className={styles.pagination}>
+                <button
+                    className={styles.paginationButton}
+                    onClick={() => handlePageChange(1)}
+                    disabled={currentPage === 1}
+                >
+                    Primeira
+                </button>
+                <button
+                    className={styles.paginationButton}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                >
+                    Anterior
+                </button>
+                {getPageRange().map((pageNumber) => (
+                    <button
+                        key={pageNumber}
+                        className={`${styles.paginationButton} ${currentPage === pageNumber ? styles.activePage : ''}`}
+                        onClick={() => handlePageChange(pageNumber)}
+                    >
+                        {pageNumber}
+                    </button>
+                ))}
+                <button
+                    className={styles.paginationButton}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                >
+                    Próximo
+                </button>
+                <button
+                    className={styles.paginationButton}
+                    onClick={() => handlePageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                >
+                    Última
+                </button>
+            </div>
         </div>
     );
 }

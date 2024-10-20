@@ -8,7 +8,7 @@ import { openCaixa, closeCaixa, fetchMovimentosByCaixaId, checkCaixaStatus } fro
 
 function Caixa() {
     const [movements, setMovements] = useState([]);
-    const [caixaId, setCaixaId] = useState(null); // Armazena o ID do caixa
+    const [caixaId, setCaixaId] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -20,15 +20,30 @@ function Caixa() {
                     if (data && data.id) {
                         setCaixaId(data.id);
                         fetchMovimentosByCaixaId(data.id)
-                            .then(movements => setMovements(movements))
+                            .then(movements => setMovements(formatData(movements)))
                             .catch(error => console.error("Erro ao obter movimentos:", error));
                     }
                 })
                 .catch(error => console.error('Erro ao verificar status do caixa:', error));
+
         } else {
             navigate("/login");
         }
     }, [navigate]);
+
+    const formatData = (data) => {
+        console.log(data);
+        return data.map(item => ({
+            ...item,
+            fornecedor: item.fornecedor ? item.fornecedor.nome : 'Nenhum',
+            dentista: item.dentista ? item.dentista.nome : 'Nenhum',
+            valor: item.valor ? item.valor.toFixed(2) : '0.00',
+            dataHora: item.dataHoraMovimento ? new Date(item.dataHoraMovimento).toISOString().slice(0, 16) : 'Data não disponível',
+            tipo: item.receita ? item.receita.descricao : (item.despesa ? item.despesa.descricao : 'Nenhum')
+        }));
+    };
+
+
 
     const handleOpenCaixa = async () => {
         try {
@@ -39,12 +54,13 @@ function Caixa() {
 
                 localStorage.setItem('caixaId', caixaId);
                 setCaixaId(caixaId);
-                console.log('Caixa aberto com sucesso');
+                console.log('Caixa aberto com sucesso:', caixaId);
             } else {
                 navigate("/login");
             }
         } catch (error) {
             console.error('Erro ao abrir o caixa:', error.message);
+            alert('Erro ao abrir o caixa. Tente novamente mais tarde.');
         }
     };
 
@@ -53,15 +69,21 @@ function Caixa() {
 
         if (userId) {
             try {
+                // Fechar o caixa
                 await closeCaixa(userId);
+                console.log('Caixa fechado com sucesso');
+
+                // Limpar estado e localStorage
                 setCaixaId(null);
                 setMovements([]);
-                console.log('Caixa fechado com sucesso');
+                localStorage.removeItem('caixaId');
             } catch (error) {
                 console.error("Erro ao fechar o caixa:", error.message);
+                alert('Erro ao fechar o caixa. Tente novamente mais tarde.');
             }
         } else {
             console.warn('Não foi possível fechar o caixa. Verifique se o usuário está autenticado e o caixa está aberto.');
+            alert('Não foi possível fechar o caixa. Verifique se o usuário está autenticado.');
         }
     };
 
@@ -69,16 +91,15 @@ function Caixa() {
         navigate("/novo-movimento");
     };
 
-    const handleRowClick = (id) => {
-        navigate(`/novo-movimento/${id}`);
-    };
 
     const columns = [
         { key: 'operacao', label: 'Operação' },
+        { key: 'tipo', label: 'Tipo' },
         { key: 'modalidade', label: 'Modalidade' },
+        { key: 'fornecedor', label: 'Fornecedor' },
+        { key: 'dentista', label: 'Dentista' },
         { key: 'valor', label: 'Valor' },
-        { key: 'descricao', label: 'Descrição' },
-        { key: 'dataHora', label: 'Data e Hora' }
+        { key: 'dataHora', label: 'Data/Hora' }
     ];
 
     const footerButtons = [
@@ -88,16 +109,21 @@ function Caixa() {
 
     return (
         <Dashboard>
-            <div className={styles.contentWrapper}>
-                {!caixaId && (
-                    <button className={styles.openCaixaButton} onClick={handleOpenCaixa}>
-                        Abrir Caixa
-                    </button>
-                )}
-                {caixaId && (
+            <div className={styles.mainContent}>
+                {!caixaId ? (
+                    <div className={styles.contentWrapper}>
+                        <button className={styles.openCaixaButton} onClick={handleOpenCaixa}>
+                            Abrir Caixa
+                        </button>
+                    </div>
+                ) : (
                     <>
-                        <Table data={movements} columns={columns} onRowClick={handleRowClick} />
-                        <Footer buttons={footerButtons} />
+                        <div className={styles.tableWrapper}>
+                            <Table data={movements} columns={columns} />
+                        </div>
+                        <div className={styles.footerWrapper}>
+                            <Footer buttons={footerButtons} />
+                        </div>
                     </>
                 )}
             </div>

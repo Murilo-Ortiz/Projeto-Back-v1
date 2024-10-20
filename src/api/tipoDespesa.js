@@ -1,79 +1,80 @@
-import api from './api'; // Importe a instância do axios
+import api from './api';
 
-const API_BASE_URL = 'api/despesa';
+const API_BASE_URL = '/despesa';
 
-// Função para obter todos os tipos de despesa
-export const fetchTipoDespesas = async () => {
+export const fetchDespesa = async () => {
     try {
-        const response = await api.get(`${API_BASE_URL}`);
+        const response = await api.get(API_BASE_URL);
         if (response.status !== 200) {
-            throw new Error('Failed to fetch tipos de despesa');
+            throw new Error('Failed to fetch despesa');
         }
-        return response.data; // `response.data` contém o JSON retornado
+        console.log(response.data);
+        return response.data;
     } catch (error) {
-        console.error(error);
-        throw error; // Repassa o erro para o chamador
+        console.error('Erro ao buscar despesa:', error);
+        throw error;
     }
 };
 
-// Função para obter um tipo de despesa pelo ID
-export const fetchTipoDespesaById = async (id) => {
+export const fetchDespesaById = async (id) => {
     try {
         const response = await api.get(`${API_BASE_URL}/${id}`);
         if (response.status !== 200) {
-            throw new Error('Failed to fetch tipo de despesa');
+            throw new Error('Failed to fetch despesa');
         }
-        return response.data; // `response.data` contém o JSON retornado
+        return response.data;
     } catch (error) {
-        console.error(error);
-        throw error; // Repassa o erro para o chamador
+        console.error('Erro ao buscar despesa:', error);
+        throw error;
     }
 };
 
-// Função para criar um novo tipo de despesa
-export const createTipoDespesa = async (tipoDespesa) => {
+export const createDespesa = async (despesa) => {
     try {
-        const response = await api.post(`${API_BASE_URL}`, tipoDespesa, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const payload = {
+            descricao: despesa.descricao || '',
+        };
+
+
+        const response = await api.post(API_BASE_URL, payload);
+
         if (response.status !== 201) {
-            throw new Error('Failed to create tipo de despesa');
+            throw new Error('Failed to create despesa');
         }
-        return response.data; // `response.data` contém o JSON retornado
+
+        return response.data;
     } catch (error) {
-        console.error(error);
-        throw error; // Repassa o erro para o chamador
+        console.error('Erro ao criar despesa:', error.response?.data || error.message);
+        throw error;
     }
 };
 
-// Função para atualizar um tipo de despesa
-export const updateTipoDespesa = async (id, tipoDespesa) => {
+export const updateDespesa = async (id, despesa) => {
     try {
-        const response = await api.put(`${API_BASE_URL}/${id}`, tipoDespesa, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        if (response.status !== 200) {
-            throw new Error('Failed to update tipo de despesa');
+        const payload = {
+            descricao: despesa.descricao || '',
+        };
+
+        const response = await api.put(`${API_BASE_URL}/${id}`, payload);
+
+        if (response.status !== 200 && response.status !== 204) {
+            throw new Error('Failed to update despesa');
         }
+        return response.data;
     } catch (error) {
-        console.error(error);
-        throw error; // Repassa o erro para o chamador
+        console.error('Erro ao atualizar despesa:', error.response?.data || error.message);
+        throw error;
     }
 };
 
-// Função para deletar um tipo de despesa
-export const deleteTipoDespesa = async (id) => {
+export const deleteDespesa = async (id) => {
     try {
         const response = await api.delete(`${API_BASE_URL}/${id}`);
-        if (response.status !== 200) {
-            throw new Error('Failed to delete tipo de despesa');
+        if (response.status !== 204) {
+            throw new Error('Failed to delete despesa');
         }
     } catch (error) {
-        console.error(error);
-        throw error; // Repassa o erro para o chamador
+        console.error('Erro ao excluir despesa:', error);
+        throw error;
     }
 };

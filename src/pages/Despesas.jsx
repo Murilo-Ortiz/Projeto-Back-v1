@@ -2,58 +2,57 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from '../components/Dashboard';
 import Table from '../components/Table';
 import Footer from '../components/Footer';
-import styles from '../styles/pages/Despesas.module.css';
+import styles from '../styles/pages/Dentistas.module.css';
 import { useNavigate } from 'react-router-dom';
-import { fetchTipoDespesas } from '../api/tipoDespesa';
+import { fetchDespesa } from '../api/tipoDespesa';
 
-function TipoDespesas() {
-    const [tipoDespesas, setTipoDespesas] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+function TipoDespesa() {
     const navigate = useNavigate();
+    const [despesas, setDespesas] = useState([]);
+    const [generalError, setGeneralError] = useState(null);
 
     useEffect(() => {
-        const loadTipoDespesas = async () => {
+        const loadDespesas = async () => {
             try {
-                const data = await fetchTipoDespesas();
-                setTipoDespesas(data);
-            } catch (err) {
-                setError(err);
-            } finally {
-                setLoading(false);
+                const data = await fetchDespesa();
+                setDespesas(data);
+            } catch (error) {
+                handleBackendError(error);
             }
         };
-        loadTipoDespesas();
+        loadDespesas();
     }, []);
 
-    const handleAddTipoDespesa = () => {
-        navigate('/novo-tipo-despesa'); // Redireciona para a página de criação
+    const handleBackendError = (error) => {
+        if (error.response && error.response.data) {
+            setGeneralError('Erro ao carregar despesas: ' + (error.response.data.message || 'Erro desconhecido'));
+        } else {
+            setGeneralError('Erro de conexão ou problema desconhecido ao carregar despesas.');
+        }
+        console.error('Erro ao buscar tipo despesa:', error);
+    };
+
+    const handleAddDespesa = () => {
+        navigate('/novo-tipo-despesa');
     };
 
     const columns = [
-        { key: 'descricao', label: 'Descrição' },
+        { key: 'descricao', label: 'Descrição' }
     ];
 
     const buttons = [
-        { type: 'add', text: 'Adicionar Novo Tipo de Despesa', onClick: handleAddTipoDespesa }
+        { type: 'add', text: 'Adicionar Tipo Despesa', onClick: handleAddDespesa }
     ];
 
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>Error: {error.message}</p>;
-
     return (
-        <Dashboard>
-            <div className={styles.contentWrapper}>
-                <Table
-                    data={tipoDespesas}
-                    columns={columns}
-                    onRowClick={(id) => navigate(`/tipo-despesa/${id}`)}
-                    usePagination={true} // Ou altere para `false` se desejar usar rolagem
-                />
-                <Footer buttons={buttons} />
+        <Dashboard title="Tipo Despesa" error={generalError}>
+            <div className={styles.formWrapper}>
+                <h1 className={styles.title}>{'Tipo de Despesa'}</h1>
+                <Table data={despesas} columns={columns} onEditClick={(id) => navigate(`/despesas/${id}`)}/>
+                <Footer buttons={buttons}/>
             </div>
         </Dashboard>
     );
 }
 
-export default TipoDespesas;
+export default  TipoDespesa;
