@@ -9,30 +9,42 @@ import { openCaixa, closeCaixa, fetchMovimentosByCaixaId, checkCaixaStatus } fro
 function Caixa() {
     const [movements, setMovements] = useState([]);
     const [caixaId, setCaixaId] = useState(null);
+    const [generalError, setGeneralError] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const userId = localStorage.getItem('userId');
+        const loadMovements = async () => {
+            try {
+                const userId = localStorage.getItem('userId');
 
-        if (userId) {
-            checkCaixaStatus(userId)
-                .then(data => {
+                if (userId) {
+                    const data = await checkCaixaStatus(userId);
                     if (data && data.id) {
                         setCaixaId(data.id);
-                        fetchMovimentosByCaixaId(data.id)
-                            .then(movements => setMovements(formatData(movements)))
-                            .catch(error => console.error("Erro ao obter movimentos:", error));
+                        const movementsData = await fetchMovimentosByCaixaId(data.id);
+                        setMovements(formatData(movementsData));
                     }
-                })
-                .catch(error => console.error('Erro ao verificar status do caixa:', error));
+                } else {
+                    navigate("/login");
+                }
+            } catch (error) {
+                handleBackendError(error);
+            }
+        };
 
-        } else {
-            navigate("/login");
-        }
+        loadMovements();
     }, [navigate]);
 
+    const handleBackendError = (error) => {
+        if (error.response && error.response.data) {
+            setGeneralError('Erro ao carregar movimentos: ' + (error.response.data.message || 'Erro desconhecido'));
+        } else {
+            setGeneralError('Erro de conexão ou problema desconhecido ao carregar movimentos.');
+        }
+        console.error('Erro ao buscar movimentos:', error);
+    };
+
     const formatData = (data) => {
-        console.log(data);
         return data.map(item => ({
             ...item,
             fornecedor: item.fornecedor ? item.fornecedor.nome : 'Nenhum',
@@ -43,8 +55,6 @@ function Caixa() {
         }));
     };
 
-
-
     const handleOpenCaixa = async () => {
         try {
             const userId = localStorage.getItem('userId');
@@ -54,12 +64,11 @@ function Caixa() {
 
                 localStorage.setItem('caixaId', caixaId);
                 setCaixaId(caixaId);
-                console.log('Caixa aberto com sucesso:', caixaId);
             } else {
                 navigate("/login");
             }
         } catch (error) {
-            console.error('Erro ao abrir o caixa:', error.message);
+            handleBackendError(error);
             alert('Erro ao abrir o caixa. Tente novamente mais tarde.');
         }
     };
@@ -69,20 +78,15 @@ function Caixa() {
 
         if (userId) {
             try {
-                // Fechar o caixa
                 await closeCaixa(userId);
-                console.log('Caixa fechado com sucesso');
-
-                // Limpar estado e localStorage
                 setCaixaId(null);
                 setMovements([]);
                 localStorage.removeItem('caixaId');
             } catch (error) {
-                console.error("Erro ao fechar o caixa:", error.message);
+                handleBackendError(error);
                 alert('Erro ao fechar o caixa. Tente novamente mais tarde.');
             }
         } else {
-            console.warn('Não foi possível fechar o caixa. Verifique se o usuário está autenticado e o caixa está aberto.');
             alert('Não foi possível fechar o caixa. Verifique se o usuário está autenticado.');
         }
     };
@@ -90,7 +94,6 @@ function Caixa() {
     const handleAddMovement = () => {
         navigate("/novo-movimento");
     };
-
 
     const columns = [
         { key: 'operacao', label: 'Operação' },
@@ -103,13 +106,14 @@ function Caixa() {
     ];
 
     const footerButtons = [
-        { text: "Adicionar", onClick: handleAddMovement, type: "add" },
-        { text: "Fechar", onClick: handleCloseCaixa, type: "close" }
+        { text: "Adicionar Movimento", onClick: handleAddMovement, type: "add" },
+        { text: "Fechar Caixa", onClick: handleCloseCaixa, type: "close" }
     ];
 
     return (
-        <Dashboard>
-            <div className={styles.mainContent}>
+        <Dashboard title="Caixa" error={generalError}>
+            <div className={styles.formWrapper}>
+                <h1 className={styles.title}>{'Caixa'}</h1>
                 {!caixaId ? (
                     <div className={styles.contentWrapper}>
                         <button className={styles.openCaixaButton} onClick={handleOpenCaixa}>
@@ -118,9 +122,7 @@ function Caixa() {
                     </div>
                 ) : (
                     <>
-                        <div className={styles.tableWrapper}>
                             <Table data={movements} columns={columns} />
-                        </div>
                         <div className={styles.footerWrapper}>
                             <Footer buttons={footerButtons} />
                         </div>

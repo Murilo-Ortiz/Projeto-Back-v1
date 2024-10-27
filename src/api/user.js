@@ -105,3 +105,24 @@ export const deleteUser = async (id) => {
         throw error;
     }
 };
+
+export const fetchCaixasFromUser = async (id) => {
+    try {
+        const response = await api.get(`/admin/caixas/${id}`);
+        if (response.status !== 204) {
+            throw new Error('Failed to get caixas from user');
+        }
+    } catch (error) {
+        console.error('Erro ao buscar caixas do usuario:', error);
+        throw error;
+    }
+};
+
+export async function fetchCaixaDetails(userId, caixaId) {
+    const response = await fetch(`/admin/caixa/${caixaId}/movimentos`);
+    if (!response.ok) {
+        throw new Error('Erro ao buscar detalhes do caixa');
+    }
+    return await response.json();
+}
+

@@ -108,7 +108,7 @@ function NovoMovimento() {
             }
 
             if (!validateFields()) {
-                return; // Interrompe o processo se houver erro
+                return;
             }
 
             const movimentoData = {

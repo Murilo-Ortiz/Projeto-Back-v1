@@ -11,7 +11,7 @@ export const fetchReceita = async () => {
         return response.data;
     } catch (error) {
         console.error('Erro ao buscar receita:', error);
-        throw error;
+        throw new Error (error);
     }
 };
 
@@ -24,7 +24,7 @@ export const fetchReceitaById = async (id) => {
         return response.data;
     } catch (error) {
         console.error('Erro ao buscar receita:', error);
-        throw error;
+        throw new Error (error);
     }
 };
 
@@ -44,7 +44,7 @@ export const createReceita = async (receita) => {
         return response.data;
     } catch (error) {
         console.error('Erro ao criar receita:', error.response?.data || error.message);
-        throw error;
+        throw new Error (error);
     }
 };
 
@@ -62,7 +62,7 @@ export const updateReceita = async (id, receita) => {
         return response.data;
     } catch (error) {
         console.error('Erro ao atualizar receita:', error.response?.data || error.message);
-        throw error;
+        throw new Error (error);
     }
 };
 
@@ -74,6 +74,6 @@ export const deleteReceita = async (id) => {
         }
     } catch (error) {
         console.error('Erro ao excluir receita:', error);
-        throw error;
+        throw new Error (error);
     }
 };

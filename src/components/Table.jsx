@@ -5,15 +5,23 @@ import styles from '../styles/components/Table.module.css';
 function Table({ data, columns, onEditClick }) {
     const rowsPerPage = 5;
     const [currentPage, setCurrentPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState(''); // Estado para a barra de pesquisa
     const maxPageButtons = 5; // Número máximo de botões de página visíveis
 
     if (!data || !columns) return null;
 
+    // Função para filtrar dados com base na pesquisa
+    const filteredData = data.filter(row =>
+        columns.some(col =>
+            row[col.key]?.toString().toLowerCase().includes(searchQuery.toLowerCase())
+        )
+    );
+
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-    const currentRows = data.slice(indexOfFirstRow, indexOfLastRow);
+    const currentRows = filteredData.slice(indexOfFirstRow, indexOfLastRow);
 
-    const totalPages = Math.ceil(data.length / rowsPerPage);
+    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
     const handlePageChange = (newPage) => {
         if (newPage > 0 && newPage <= totalPages) {
@@ -43,6 +51,11 @@ function Table({ data, columns, onEditClick }) {
                     type="text"
                     placeholder="Pesquisar..."
                     className={styles.searchInput}
+                    value={searchQuery}
+                    onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setCurrentPage(1); // Resetar para a primeira página ao pesquisar
+                    }}
                 />
             </div>
             <table className={styles.table}>
@@ -55,24 +68,32 @@ function Table({ data, columns, onEditClick }) {
                 </tr>
                 </thead>
                 <tbody>
-                {currentRows.map((row) => (
-                    <tr key={row.id}>
-                        {columns.map((col) => (
-                            <td key={col.key}>
-                                {typeof row[col.key] === 'object'
-                                    ? JSON.stringify(row[col.key])
-                                    : row[col.key]}
+                {currentRows.length > 0 ? (
+                    currentRows.map((row) => (
+                        <tr key={row.id}>
+                            {columns.map((col) => (
+                                <td key={col.key}>
+                                    {typeof row[col.key] === 'object'
+                                        ? JSON.stringify(row[col.key])
+                                        : row[col.key]}
+                                </td>
+                            ))}
+                            <td className={styles.editIcon}>
+                                <FaEdit
+                                    title="Editar"
+                                    onClick={() => onEditClick(row.id)}
+                                    className={styles.icon}
+                                />
                             </td>
-                        ))}
-                        <td className={styles.editIcon}>
-                            <FaEdit
-                                title="Editar" // Tooltip simples usando o atributo title
-                                onClick={() => onEditClick(row.id)}
-                                className={styles.icon}
-                            />
+                        </tr>
+                    ))
+                ) : (
+                    <tr>
+                        <td colSpan={columns.length + 1} style={{ textAlign: 'center' }}>
+                            Nenhum resultado encontrado.
                         </td>
                     </tr>
-                ))}
+                )}
                 </tbody>
             </table>
             <div className={styles.pagination}>

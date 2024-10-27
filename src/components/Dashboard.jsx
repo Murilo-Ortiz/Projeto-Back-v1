@@ -4,7 +4,7 @@ import ErrorPopup from './ErrorPopup';
 import styles from '../styles/components/Dashboard.module.css';
 import Header from "./Header";
 
-const Dashboard = ({ children, title, error }) => {
+const Dashboard = ({ children, title, error, currentScreen}) => {
     const [erro, setError] = useState(error);
     const[admin, setAdmin] = useState(true);
 
@@ -22,7 +22,7 @@ const Dashboard = ({ children, title, error }) => {
 
     return (
         <div className={styles.dashboard}>
-            <Sidebar showUsers={admin}/>
+            <Sidebar showUsers={admin} currentScreen={currentScreen}/>
             <div className={styles.mainContent}>
                 <Header/>
                 <div className={styles.contentWrapper}>
